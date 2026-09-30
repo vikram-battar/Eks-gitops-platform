@@ -1,0 +1,18 @@
+# Copy to terraform.tfvars and fill in real values before running.
+# Every value below is a placeholder — nothing here is a real credential.
+project         = "eks-gitops-platform"
+region          = "us-east-1"
+vpc_cidr        = "10.10.0.0/16"
+cluster_version = "1.29"
+
+tags = {
+  Project     = "eks-gitops-platform"
+  Environment = "dev"
+  ManagedBy   = "terraform"
+}
+
+# Example backend config (pass via -backend-config, do NOT commit real values):
+# bucket  = "example-tfstate-bucket"
+# key     = "eks-gitops-platform/dev/terraform.tfstate"
+# region  = "us-east-1"
+# account_id = "123456789012"  # placeholder only

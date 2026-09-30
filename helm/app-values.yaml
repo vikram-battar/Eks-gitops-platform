@@ -1,0 +1,39 @@
+# Values for the sample web app deployed by Argo CD (argocd/apps/web-app.yaml).
+replicaCount: 2
+
+image:
+  repository: public.ecr.aws/nginx/nginx
+  tag: "1.25.3"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Pod security defaults enforced alongside policies/kyverno.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  fsGroup: 101
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+serviceAccount:
+  create: true
+  name: web-app
+
+ingress:
+  enabled: false

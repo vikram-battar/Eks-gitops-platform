@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    # Replace with the real repo URL after pushing this project to GitHub.
+    repoURL: https://github.com/vikram-battar/eks-gitops-platform.git
+    targetRevision: HEAD
+    path: helm
+    helm:
+      valueFiles:
+        - app-values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,60 @@
+{
+  "panels": [
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(kube_pod_info{namespace!=\"kube-system\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Running Pods (excl. kube-system)",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)",
+          "refId": "A"
+        }
+      ],
+      "title": "Container CPU usage by pod",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "argocd_app_info",
+          "refId": "A"
+        }
+      ],
+      "title": "Argo CD app sync status",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "title": "EKS GitOps Platform Overview",
+  "uid": "eks-gitops-overview",
+  "version": 1
+}

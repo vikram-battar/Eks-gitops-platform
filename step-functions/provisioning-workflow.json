@@ -1,0 +1,59 @@
+{
+  "Comment": "Provision an environment baseline: tag the VPC, ensure the IAM role, and ensure the KMS key alias via the provisioning Lambda.",
+  "StartAt": "ProvisionEnvironment",
+  "States": {
+    "CheckResult": {
+      "Choices": [
+        {
+          "Next": "ProvisioningSucceeded",
+          "StringEquals": "SUCCEEDED",
+          "Variable": "$.Payload.status"
+        }
+      ],
+      "Default": "ProvisioningFailed",
+      "Type": "Choice"
+    },
+    "ProvisionEnvironment": {
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ProvisioningFailed",
+          "ResultPath": "$.lambdaError"
+        }
+      ],
+      "Next": "CheckResult",
+      "Parameters": {
+        "FunctionName": "${ProvisioningLambdaArn}",
+        "Payload": {
+          "extra_tags.$": "$.extra_tags",
+          "kms_alias.$": "$.kms_alias",
+          "role_name.$": "$.role_name",
+          "vpc_id.$": "$.vpc_id"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Retry": [
+        {
+          "BackoffRate": 2.0,
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3
+        }
+      ],
+      "Type": "Task"
+    },
+    "ProvisioningFailed": {
+      "Cause": "The provisioning Lambda did not report SUCCEEDED. See execution input for details.",
+      "Error": "ProvisioningFailed",
+      "Type": "Fail"
+    },
+    "ProvisioningSucceeded": {
+      "Type": "Succeed"
+    }
+  }
+}

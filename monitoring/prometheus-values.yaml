@@ -1,0 +1,42 @@
+# Values for kube-prometheus-stack (deploy with: helm install monitoring
+# prometheus-community/kube-prometheus-stack -f monitoring/prometheus-values.yaml).
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  enabled: true
+  config:
+    route:
+      receiver: "null"
+    receivers:
+      - name: "null"
+
+grafana:
+  enabled: true
+  # Set a real password via --set grafana.adminPassword=... or an external secret.
+  adminPassword: "changeme-override-me"
+  persistence:
+    enabled: true
+    size: 5Gi
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: platform
+          orgId: 1
+          folder: Platform
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/platform
+  dashboards:
+    platform:
+      eks-gitops-overview:
+        # Dashboard JSON lives in monitoring/grafana-dashboard.json.
+        json: ""

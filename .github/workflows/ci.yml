@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate (all modules and envs)
+        run: |
+          set -e
+          for dir in modules/vpc modules/eks modules/iam-irsa modules/kms envs/dev envs/prod; do
+            echo "== validating $dir =="
+            (cd "$dir" && terraform init -backend=false -input=false && terraform validate)
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python syntax check
+        run: python3 -m py_compile $(git ls-files '*.py')
+
+      - name: YAML syntax check
+        run: |
+          pip install pyyaml
+          python3 - <<'PYEOF'
+          import glob, sys
+          import yaml
+
+          def cfn_constructor(loader, tag_suffix, node):
+              # Tolerate CloudFormation intrinsic tags (!Ref, !Sub, ...).
+              if isinstance(node, yaml.ScalarNode):
+                  return loader.construct_scalar(node)
+              if isinstance(node, yaml.SequenceNode):
+                  return loader.construct_sequence(node, deep=True)
+              return loader.construct_mapping(node, deep=True)
+
+          yaml.SafeLoader.add_multi_constructor("!", cfn_constructor)
+
+          bad = []
+          for path in sorted(glob.glob('**/*.y*ml', recursive=True)):
+              try:
+                  with open(path) as fh:
+                      list(yaml.safe_load_all(fh))
+              except yaml.YAMLError as exc:
+                  bad.append((path, exc))
+          if bad:
+              for path, exc in bad:
+                  print("INVALID YAML: %s\n%s" % (path, exc))
+              sys.exit(1)
+          print("all yaml files parsed ok")
+          PYEOF
+
+      - name: JSON syntax check
+        run: |
+          for f in $(git ls-files '*.json'); do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" || exit 1
+          done
+          echo "all json files parsed ok"
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform,cloudformation
+          quiet: true
